@@ -71,23 +71,24 @@ public class MongoHandler extends Handler {
     public void publish(final LogRecord pRecord) {
         if (!isLoggable(pRecord)) return;
 
+        // TODO: Buffer so that no more than one batch/message per second is sent.
+
         try {
             final DBCollection col = getCollection();
 
             System.out.println("--- this is the message");
 
         } catch (final UnknownHostException uhe) {
-            uhe.printStackTrace();
             getErrorManager().error(uhe.getMessage(), uhe, ErrorManager.OPEN_FAILURE);
 
         } catch (final MongoException me) {
-            me.printStackTrace();
             getErrorManager().error(me.getMessage(), me, ErrorManager.WRITE_FAILURE);
-        } catch (final Throwable t) {
-            t.printStackTrace();
         }
     }
 
+    /** 
+     * Returns the configured collection.
+     */
     private DBCollection getCollection() throws UnknownHostException {
         if (_collection != null) return _collection;
 
@@ -176,8 +177,8 @@ public class MongoHandler extends Handler {
         } catch (final Exception e) { return pDefault; }
     }
 
-    public void close() { }
-
+    public void close() { } 
+    
     public void flush() { }
 
     private Mongo _mongo;
