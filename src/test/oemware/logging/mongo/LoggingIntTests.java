@@ -42,8 +42,8 @@ public final class LoggingIntTests {
     }
 
     @Test
-    public void testFinestMsgOnly() throws Exception {
-        LOG.log(Level.WARNING, "this is a test");      
+    public void testSimpleWarning() throws Exception {
+        for (int idx=0; idx < 100; idx++) LOG.log(Level.WARNING, "this is a test");      
     }
 
     private Logger getLogger() {
