@@ -24,6 +24,7 @@ import com.mongodb.ServerAddress;
 import com.mongodb.MongoOptions;
 import com.mongodb.MongoException;
 import com.mongodb.DBCollection;
+import com.mongodb.BasicDBObject;
 
 // Java
 import java.util.logging.Level;
@@ -32,7 +33,10 @@ import java.util.logging.LogRecord;
 import java.util.logging.LogManager;
 import java.util.logging.Handler;
 import java.util.logging.ErrorManager;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The Mongo logger for 
@@ -48,7 +52,7 @@ import java.net.UnknownHostException;
  * <pre>
  * oemware.logging.mongo.MongoHandler.level specifies the default level for the Handler (defaults to Level.ALL).
  * oemware.logging.mongo.MongoHandler.filter specifies the name of a Filter class to use (defaults to no Filter).
- * oemware.logging.mongo.MongoHandler.encoding the name of the character set encoding to use (defaults to platform default).
+ * oemware.logging.mongo.MongoHandler.encoding the name of the character set encoding to use (else platform default).
  * oemware.logging.mongo.MongoHandler.mongoUsername The optional username (not optional if secured).
  * oemware.logging.mongo.MongoHandler.mongoPasswod The optional password (not optional if secured).
  * oemware.logging.mongo.MongoHandler.mongoHost The required mongo host/server name or address (default is localhost).
@@ -61,27 +65,54 @@ import java.net.UnknownHostException;
  * oemware.logging.mongo.MongoHandler.threadsAllowedToBlockForConnectionMultiplier see mongo docs (default is 5).
  * oemware.logging.mongo.MongoHandler.databaseName The name of the Mongo database (defaults to mongo-java-logging).
  * oemware.logging.mongo.MongoHandler.collectionName The name of the Mongo collection (defaults to log).
+ * oemware.logging.mongo.MongoHandler.nodeName The optional name of the node. Otherwise, uses ip address(s).
+ * oemware.logging.mongo.MongoHandler.maxQueueSize Set the max queue size. If the queue is full, new messages
+ * are dropped. This was done to avoid memory issues and application blocking (defualt is 500).
+ * oemware.logging.mongo.MongoHandler.closeSleepTime The optional (default is 500 ms) amount to sleep before stopping. This
+ * allows log messsages in the queue/buffer a chance to be persisted to Mongo. This value is in milliseconds.
+ * 
+ * TODO: Configure rolling, time zone, etc?
  * </pre>
  *
  */
 public class MongoHandler extends Handler {
 
-    public MongoHandler() { super(); configureHandler(); }
+    public MongoHandler() throws Exception { super(); configure(); }
 
-    public void publish(final LogRecord pRecord) {
-        if (!isLoggable(pRecord)) return;
-
-        // TODO: Buffer so that no more than one batch/message per second is sent.
+    public void publish(final LogRecord pRcd) {
+        if (!isLoggable(pRcd)) return;
 
         try {
-            final DBCollection col = getCollection();
+            if (_queue == null) configure();
 
-            System.out.println("--- this is the message");
+            final BasicDBObject msg = new BasicDBObject();
+            msg.put(LogMsg.LEVEL.field, pRcd.getLevel().getName());
+            msg.put(LogMsg.MSG.field, pRcd.getMessage());
+            msg.put(LogMsg.LOGGER.field, pRcd.getLoggerName());
+            msg.put(LogMsg.MSG_SEQ.field, pRcd.getSequenceNumber());
+            msg.put(LogMsg.THREAD.field, pRcd.getThreadID());
+            msg.put(LogMsg.RES_BUNDLE.field, pRcd.getResourceBundleName());
+            msg.put(LogMsg.TIMESTAMP.field, pRcd.getMillis());
+            msg.put(LogMsg.SRC_METHOD.field, pRcd.getSourceMethodName());
+            msg.put(LogMsg.SRC_CLASS.field, pRcd.getSourceClassName());
+            msg.put(LogMsg.THROWN.field, pRcd.getThrown());
+            msg.put(LogMsg.APP_PID.field, _pid);
+            msg.put(LogMsg.NODE_NAME.field, _nodeName);
 
-        } catch (final UnknownHostException uhe) {
-            getErrorManager().error(uhe.getMessage(), uhe, ErrorManager.OPEN_FAILURE);
+            if (!_queue.offer(msg)) 
+            { getErrorManager().error("Queue is full", null, ErrorManager.WRITE_FAILURE); }
 
-        } catch (final MongoException me) {
+        } catch (final Exception e) {
+            getErrorManager().error(e.getMessage(), e, ErrorManager.WRITE_FAILURE);
+        }
+    }
+
+    /**
+     * Send the message to mongo (i.e., insert in the collection).
+     */
+    private void sendToMongo(final BasicDBObject pMsg) { 
+        try { getCollection().insert(pMsg); 
+        } catch (final Exception me) {
             getErrorManager().error(me.getMessage(), me, ErrorManager.WRITE_FAILURE);
         }
     }
@@ -102,7 +133,7 @@ public class MongoHandler extends Handler {
             mongoOptions.connectTimeout = _connectTimeout; 
             mongoOptions.socketTimeout = _socketTimeout; 
             mongoOptions.maxWaitTime = _maxWaitTime; 
-            mongoOptions.threadsAllowedToBlockForConnectionMultiplier = _threadsAllowedToBlockForConnectionMultiplier; 
+            mongoOptions.threadsAllowedToBlockForConnectionMultiplier = _threadsAllowedToBlockForConnectionMultiplier;
 
             _mongo
             = new Mongo(new DBAddress(_mongoHost, _mongoPort, _databaseName), mongoOptions);
@@ -118,10 +149,38 @@ public class MongoHandler extends Handler {
         }
     }
 
-    private void configureHandler() {
+    public void flush() { }
+
+    /**
+     * Stop the thread.
+     */
+    public void close() {
+
+        if (_closeSleepTime != null && _closeSleepTime > 0) {
+            try { Thread.sleep(_closeSleepTime);
+            } catch (final InterruptedException ie) { }
+        }
+
+        if (_msgWriterThread == null) return;
+        try {
+            if (_queue != null) _queue.put(new BasicDBObject());
+            _msgWriterThread.interrupt();
+        } catch (final Throwable t) { }
+    }
+
+    private void configure() throws Exception {
+        
         final LogManager manager = LogManager.getLogManager();
 
         final String clazz = getClass().getName();
+
+        final String pid = ManagementFactory.getRuntimeMXBean().getName();
+        _pid = pid.substring(0, pid.indexOf("@"));
+
+        _nodeName = getStrProp(clazz + ".nodeName", null);
+
+        if (_nodeName == null)
+        { _nodeName  = InetAddress.getLocalHost().getHostName(); }
 
         _mongoHost = getStrProp(clazz + ".mongoHost", "127.0.0.1");
         _mongoPort = getIntProp(clazz + ".mongoPort", 27017);
@@ -135,7 +194,20 @@ public class MongoHandler extends Handler {
         _socketTimeout = getIntProp(clazz + ".socketTimeout", 10000);
         _maxWaitTime = getIntProp(clazz + ".maxWaitTime", 5000);
         _threadsAllowedToBlockForConnectionMultiplier = getIntProp(clazz + ".threadsAllowedToBlockForConnectionMultiplier", 5);
+
+        _closeSleepTime = getIntProp(clazz + ".closeSleepTime", 500);
+
         setLevel(getLevelProp(clazz + ".level", Level.ALL));
+
+        _maxQueueSize = getIntProp(clazz + ".maxQueueSize", 500);
+
+        if (_queue == null)
+        { _queue = new LinkedBlockingQueue<BasicDBObject>(_maxQueueSize); }
+
+        if (_msgWriterThread == null) {
+            _msgWriterThread = new MsgWriterThread();
+            _msgWriterThread.start();
+        }
 
         setFilter(getFilterProp(clazz + ".filter", null));
         try { setEncoding(getStrProp(clazz + ".encoding", null));
@@ -177,10 +249,6 @@ public class MongoHandler extends Handler {
         } catch (final Exception e) { return pDefault; }
     }
 
-    public void close() { } 
-    
-    public void flush() { }
-
     private Mongo _mongo;
     private DBCollection _collection;
 
@@ -195,9 +263,49 @@ public class MongoHandler extends Handler {
     private Integer _connectionsPerHost;
     private Integer _connectTimeout;
     private Integer _socketTimeout;
+    private Integer _closeSleepTime;
     private Integer _maxWaitTime;
     private Integer _threadsAllowedToBlockForConnectionMultiplier;
+    private String _pid;
+    private String _nodeName;
+    private int _maxQueueSize;
 
     private static final Object sMutex = new Object();
+
+    private LinkedBlockingQueue<BasicDBObject> _queue;
+
+    private MsgWriterThread _msgWriterThread;
+
+    /**
+     * Read the messages from the queue and write to mongo.
+     */
+    private class MsgWriterThread extends Thread {
+        
+        public void run() { 
+            while (true) {
+                try {
+                    final BasicDBObject msg = _queue.take();
+
+                    System.out.println("------- taking a message");
+
+                    // A null message means close was called.
+                    if (msg.isEmpty()) { 
+                        System.out.println("------- msg is empty");
+                        break;
+                    }
+
+                    sendToMongo(msg);
+
+                } catch (final InterruptedException ie) { break;
+                } catch (final Throwable t) {
+                    if (t instanceof Exception) { 
+                        getErrorManager().error(t.getMessage(), (Exception)t, ErrorManager.WRITE_FAILURE); 
+                    } else { 
+                        getErrorManager().error(t.getMessage(), null, ErrorManager.WRITE_FAILURE); 
+                    }
+                }
+            }
+        }
+    }
 }
 
