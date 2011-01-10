@@ -38,16 +38,10 @@ public final class LoggingIntTests {
         // In the current release of Java, the system does not look in the 
         // classpath for the logging.properties.
         LogManager.getLogManager().readConfiguration(LogConfigUtils.openClasspathResourceUrl("logging.properties"));
-
     }
 
     @Test
-    public void testSimpleWarning() throws Exception {
-        for (int idx=0; idx < 100; idx++) LOG.log(Level.WARNING, "this is a test");      
-    }
-
-    private Logger getLogger() {
-       return Logger.getLogger(LoggingIntTests.class.getName());
-    }
+    public void testSimpleWarning() throws Exception 
+    { for (int idx=0; idx < 100; idx++) LOG.log(Level.WARNING, "this is a test"); }
 }
 
