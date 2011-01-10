@@ -286,13 +286,8 @@ public class MongoHandler extends Handler {
                 try {
                     final BasicDBObject msg = _queue.take();
 
-                    System.out.println("------- taking a message");
-
-                    // A null message means close was called.
-                    if (msg.isEmpty()) { 
-                        System.out.println("------- msg is empty");
-                        break;
-                    }
+                    // An empty  message means close was called.
+                    if (msg.isEmpty()) break;
 
                     sendToMongo(msg);
 
