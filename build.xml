@@ -55,21 +55,21 @@ limitations under the License.
     <!-- Compile the java classes.                                           -->
     <!-- ******************************************************************* -->
 
-    <target name="compile"> 
+    <target name="compile">
         <mkdir dir="${dir.build.java}"/>
         <javac  destdir="${dir.build.java}"
-                target="${build.conf.javac.source}" 
-                debug="true" encoding="UTF-8" 
-                classpathref="classpath.cp" 
-                source="${build.conf.javac.source}" 
-                includeantruntime="false" 
+                target="${build.conf.javac.source}"
+                debug="true" encoding="UTF-8"
+                classpathref="classpath.cp"
+                source="${build.conf.javac.source}"
+                includeantruntime="false"
                 debuglevel="lines,vars,source">
 
             <src path="${dir.src.java}"/>
             <src path="${dir.src.java.unit}"/>
             <src path="${dir.src.java.test}"/>
             <compilerarg value="-Xlint:all,-fallthrough"/>
-            <classpath refid="classpath.all"/> 
+            <classpath refid="classpath.all"/>
         </javac>
     </target>
 
@@ -78,11 +78,11 @@ limitations under the License.
     <!-- ******************************************************************* -->
 
     <target name="unit" depends="compile">
-        <junit fork="yes" haltonfailure="true"> 
+        <junit fork="yes" haltonfailure="true">
             <jvmarg value="-Duser.timezone=GMT"/>
             <jvmarg value="-Dfile.encoding=UTF-8"/>
             <classpath refid="classpath.all"/>
-            
+
             <classpath>
                 <pathelement path="${dir.build.java}"/>
                 <pathelement path="${dir.conf}"/>
@@ -103,12 +103,12 @@ limitations under the License.
     <!-- ******************************************************************* -->
 
     <target name="test" depends="compile">
-        
-        <junit fork="yes" haltonfailure="true"> 
+
+        <junit fork="yes" haltonfailure="true">
             <jvmarg value="-Duser.timezone=GMT"/>
             <jvmarg value="-Dfile.encoding=UTF-8"/>
             <classpath refid="classpath.all"/>
-            
+
             <classpath>
                 <pathelement path="${dir.build.java}"/>
                 <pathelement path="${dir.conf}"/>
