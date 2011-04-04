@@ -38,6 +38,9 @@ import java.net.UnknownHostException;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.LinkedList;
+import java.io.Writer;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 
 /**
  * The Mongo logger for
@@ -98,7 +101,7 @@ public class MongoHandler extends Handler {
             msg.put(LogMsg.TIMESTAMP.field, pRcd.getMillis());
             msg.put(LogMsg.SRC_METHOD.field, pRcd.getSourceMethodName());
             msg.put(LogMsg.SRC_CLASS.field, pRcd.getSourceClassName());
-            msg.put(LogMsg.THROWN.field, pRcd.getThrown());
+            msg.put(LogMsg.THROWN.field, throwableToString(pRcd.getThrown()));
             msg.put(LogMsg.APP_PID.field, _pid);
             msg.put(LogMsg.NODE_NAME.field, _nodeName);
 
@@ -108,6 +111,17 @@ public class MongoHandler extends Handler {
         } catch (final Exception e) {
             getErrorManager().error(e.getMessage(), e, ErrorManager.WRITE_FAILURE);
         }
+    }
+
+    /**
+     * Serialize the throwable to a string. If T is null, null is returned.
+     */
+    private static String throwableToString(final Throwable t) {
+        if (t == null) return null;
+        final Writer result = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(result);
+        t.printStackTrace(printWriter);
+        return result.toString();
     }
 
     /**
