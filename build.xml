@@ -74,6 +74,15 @@ limitations under the License.
     </target>
 
     <!-- ******************************************************************* -->
+    <!-- Create the jar file.                                                -->
+    <!-- ******************************************************************* -->
+
+    <target name="jar" depends="clean, unit, compile">
+        <mkdir dir="build/dist"/><jar destfile="build/dist/mongo-java-logging.jar" basedir="${dir.build.java}"></jar>
+
+    </target>
+
+    <!-- ******************************************************************* -->
     <!-- Run the isolated unit tests.                                        -->
     <!-- ******************************************************************* -->
 
@@ -133,6 +142,8 @@ limitations under the License.
 ----------------------------------------
 
 - Compile the Java files ......................... compile
+
+- Create the jar file ............................ jar
 
 - Clean the source tree .......................... clean
 
