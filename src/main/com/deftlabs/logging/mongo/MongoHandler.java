@@ -61,6 +61,7 @@ import java.io.PrintWriter;
  * com.deftlabs.logging.mongo.MongoHandler.mongoPasswod The optional password (not optional if secured).
  * com.deftlabs.logging.mongo.MongoHandler.mongoHost The required mongo host/server name or address (default is localhost).
  * com.deftlabs.logging.mongo.MongoHandler.mongoPort The required mongo server port (default is 27017).
+ * com.deftlabs.logging.mongo.MongoHandler.mongoReplicaSetHosts A comma separated list of hostname:port (e.g., localhost:27018,localhost:27017).
  * com.deftlabs.logging.mongo.MongoHandler.autoConnectRetry true if mongo should try and reconnect (default is true).
  * com.deftlabs.logging.mongo.MongoHandler.connectionsPerHost true max number of connections per host (default is 10).
  * com.deftlabs.logging.mongo.MongoHandler.connectTimeout the connection timeout in ms (default is 10 seconds || 10,000 ms).
@@ -152,8 +153,24 @@ public class MongoHandler extends Handler {
             mongoOptions.maxWaitTime = _maxWaitTime;
             mongoOptions.threadsAllowedToBlockForConnectionMultiplier = _threadsAllowedToBlockForConnectionMultiplier;
 
-            _mongo
-            = new Mongo(new DBAddress(_mongoHost, _mongoPort, _databaseName), mongoOptions);
+            if (_mongoReplicaSetHosts != null) {
+                final LinkedList<ServerAddress> addrs = new LinkedList<ServerAddress>();
+                for (String val : _mongoReplicaSetHosts.split(",")) {
+                    if (val == null) continue;
+                    val = val.trim();
+                    if (val.equals("")) continue;
+
+                    final int sepIdx = val.indexOf(":");
+                    final String hostname = val.substring(0, sepIdx);
+                    final int port = Integer.parseInt(val.substring(sepIdx+1, val.length()));
+                    addrs.add(new DBAddress(hostname, port, _databaseName));
+                }
+
+                _mongo = new Mongo(addrs, mongoOptions);
+            } else {
+                _mongo
+                = new Mongo(new DBAddress(_mongoHost, _mongoPort, _databaseName), mongoOptions);
+            }
 
             final DB db = _mongo.getDB(_databaseName);
 
@@ -200,6 +217,9 @@ public class MongoHandler extends Handler {
 
         _mongoHost = getStrProp(clazz + ".mongoHost", "127.0.0.1");
         _mongoPort = getIntProp(clazz + ".mongoPort", 27017);
+
+        _mongoReplicaSetHosts = getStrProp(clazz + ".mongoReplicaSetHosts", null);
+
         _mongoUsername = getStrProp(clazz + ".mongoUsername", null);
         _mongoPassword = getStrProp(clazz + ".mongoPassword", null);
         _databaseName = getStrProp(clazz + ".databaseName", "mongo-java-logging");
@@ -279,6 +299,7 @@ public class MongoHandler extends Handler {
     private String _mongoUsername;
     private String _mongoPassword;
     private String _mongoHost;
+    private String _mongoReplicaSetHosts;
     private Integer _mongoPort;
     private String _databaseName;
     private String _collectionName;
