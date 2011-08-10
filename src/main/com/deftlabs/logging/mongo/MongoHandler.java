@@ -19,8 +19,7 @@ package com.deftlabs.logging.mongo;
 // Mongo
 import com.mongodb.DB;
 import com.mongodb.Mongo;
-import com.mongodb.DBAddress;
-import com.mongodb.ServerAddress;
+import com.mongodb.MongoURI;
 import com.mongodb.MongoOptions;
 import com.mongodb.MongoException;
 import com.mongodb.DBCollection;
@@ -57,17 +56,7 @@ import java.io.PrintWriter;
  * com.deftlabs.logging.mongo.MongoHandler.level specifies the default level for the Handler (defaults to Level.ALL).
  * com.deftlabs.logging.mongo.MongoHandler.filter specifies the name of a Filter class to use (defaults to no Filter).
  * com.deftlabs.logging.mongo.MongoHandler.encoding the name of the character set encoding to use (else platform default).
- * com.deftlabs.logging.mongo.MongoHandler.mongoUsername The optional username (not optional if secured).
- * com.deftlabs.logging.mongo.MongoHandler.mongoPasswod The optional password (not optional if secured).
- * com.deftlabs.logging.mongo.MongoHandler.mongoHost The required mongo host/server name or address (default is localhost).
- * com.deftlabs.logging.mongo.MongoHandler.mongoPort The required mongo server port (default is 27017).
- * com.deftlabs.logging.mongo.MongoHandler.mongoReplicaSetHosts A comma separated list of hostname:port (e.g., localhost:27018,localhost:27017).
- * com.deftlabs.logging.mongo.MongoHandler.autoConnectRetry true if mongo should try and reconnect (default is true).
- * com.deftlabs.logging.mongo.MongoHandler.connectionsPerHost true max number of connections per host (default is 10).
- * com.deftlabs.logging.mongo.MongoHandler.connectTimeout the connection timeout in ms (default is 10 seconds || 10,000 ms).
- * com.deftlabs.logging.mongo.MongoHandler.socketTimeout the socket timeout in ms (default is 10 seconds || 10,000 ms).
- * com.deftlabs.logging.mongo.MongoHandler.maxWaitTime the max wait time (default is 5 seconds || 5,000 ms).
- * com.deftlabs.logging.mongo.MongoHandler.threadsAllowedToBlockForConnectionMultiplier see mongo docs (default is 5).
+ * com.deftlabs.logging.mongo.MongoHandler.mongoUri The connection uri with args - see: http://api.mongodb.org/java/current/com/mongodb/MongoURI.html
  * com.deftlabs.logging.mongo.MongoHandler.databaseName The name of the Mongo database (defaults to mongo-java-logging).
  * com.deftlabs.logging.mongo.MongoHandler.collectionName The name of the Mongo collection (defaults to log).
  * com.deftlabs.logging.mongo.MongoHandler.nodeName The optional name of the node. Otherwise, uses ip address(s).
@@ -130,9 +119,8 @@ public class MongoHandler extends Handler {
      */
     private void sendToMongo(final BasicDBObject pMsg) {
         try { getCollection().insert(pMsg);
-        } catch (final Exception me) {
-            getErrorManager().error(me.getMessage(), me, ErrorManager.WRITE_FAILURE);
-        }
+        } catch (final Exception me)
+        { getErrorManager().error(me.getMessage(), me, ErrorManager.WRITE_FAILURE); }
     }
 
     /**
@@ -144,38 +132,9 @@ public class MongoHandler extends Handler {
         synchronized(sMutex) {
             if (_collection != null) return _collection;
 
-            final MongoOptions mongoOptions = new MongoOptions();
-
-            mongoOptions.autoConnectRetry = _autoConnectRetry;
-            mongoOptions.connectionsPerHost = _connectionsPerHost;
-            mongoOptions.connectTimeout = _connectTimeout;
-            mongoOptions.socketTimeout = _socketTimeout;
-            mongoOptions.maxWaitTime = _maxWaitTime;
-            mongoOptions.threadsAllowedToBlockForConnectionMultiplier = _threadsAllowedToBlockForConnectionMultiplier;
-
-            if (_mongoReplicaSetHosts != null) {
-                final LinkedList<ServerAddress> addrs = new LinkedList<ServerAddress>();
-                for (String val : _mongoReplicaSetHosts.split(",")) {
-                    if (val == null) continue;
-                    val = val.trim();
-                    if (val.equals("")) continue;
-
-                    final int sepIdx = val.indexOf(":");
-                    final String hostname = val.substring(0, sepIdx);
-                    final int port = Integer.parseInt(val.substring(sepIdx+1, val.length()));
-                    addrs.add(new DBAddress(hostname, port, _databaseName));
-                }
-
-                _mongo = new Mongo(addrs, mongoOptions);
-            } else {
-                _mongo
-                = new Mongo(new DBAddress(_mongoHost, _mongoPort, _databaseName), mongoOptions);
-            }
+            _mongo = new Mongo(new MongoURI(_mongoUri));
 
             final DB db = _mongo.getDB(_databaseName);
-
-            if (_mongoUsername != null && !db.authenticate(_mongoUsername, _mongoPassword.toCharArray()))
-            { throw new MongoException("Unable to authenticate user: " + _mongoUsername); }
 
             _collection = _mongo.getDB(_databaseName).getCollection(_collectionName);
 
@@ -215,21 +174,11 @@ public class MongoHandler extends Handler {
         if (_nodeName == null)
         { _nodeName  = InetAddress.getLocalHost().getHostName(); }
 
-        _mongoHost = getStrProp(clazz + ".mongoHost", "127.0.0.1");
-        _mongoPort = getIntProp(clazz + ".mongoPort", 27017);
+        _mongoUri = getStrProp(clazz + ".mongoUri", "mongodb://127.0.0.1:27017");
 
-        _mongoReplicaSetHosts = getStrProp(clazz + ".mongoReplicaSetHosts", null);
-
-        _mongoUsername = getStrProp(clazz + ".mongoUsername", null);
-        _mongoPassword = getStrProp(clazz + ".mongoPassword", null);
         _databaseName = getStrProp(clazz + ".databaseName", "mongo-java-logging");
+
         _collectionName = getStrProp(clazz + ".collectionName", "log");
-        _autoConnectRetry = getBoolProp(clazz + ".autoConnectRetry", true);
-        _connectionsPerHost = getIntProp(clazz + ".connectionsPerHost", 10);
-        _connectTimeout = getIntProp(clazz + ".connectTimeout", 10000);
-        _socketTimeout = getIntProp(clazz + ".socketTimeout", 10000);
-        _maxWaitTime = getIntProp(clazz + ".maxWaitTime", 5000);
-        _threadsAllowedToBlockForConnectionMultiplier = getIntProp(clazz + ".threadsAllowedToBlockForConnectionMultiplier", 5);
 
         _closeSleepTime = getIntProp(clazz + ".closeSleepTime", 500);
 
@@ -293,25 +242,15 @@ public class MongoHandler extends Handler {
     }
 
     private Mongo _mongo;
-    private DBCollection _collection;
+    private volatile DBCollection _collection;
 
     // Config
-    private String _mongoUsername;
-    private String _mongoPassword;
-    private String _mongoHost;
-    private String _mongoReplicaSetHosts;
-    private Integer _mongoPort;
+    private String _mongoUri;
     private String _databaseName;
     private String _collectionName;
-    private Boolean _autoConnectRetry;
-    private Integer _connectionsPerHost;
-    private Integer _connectTimeout;
-    private Integer _socketTimeout;
-    private Integer _closeSleepTime;
-    private Integer _maxWaitTime;
-    private Integer _threadsAllowedToBlockForConnectionMultiplier;
     private String _pid;
     private String _nodeName;
+    private Integer _closeSleepTime;
 
     private static final Object sMutex = new Object();
 
