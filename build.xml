@@ -78,7 +78,21 @@ limitations under the License.
     <!-- ******************************************************************* -->
 
     <target name="jar" depends="clean, unit, compile">
-        <mkdir dir="build/dist"/><jar destfile="build/dist/mongo-java-logging.jar" basedir="${dir.build.java}"></jar>
+        <mkdir dir="${dir.build}/dist"/>
+        <jar destfile="${dir.build}/dist/mongo-java-logging.jar" basedir="${dir.build.java}" manifest="src/main/META-INF/MANIFEST.MF"></jar>
+    </target>
+
+    <!-- ******************************************************************* -->
+    <!-- Create the additional jars.                                         -->
+    <!-- ******************************************************************* -->
+
+    <target name="jar.all" depends="jar, javadocs">
+
+        <jar jarfile="${dir.build}/dist/mongo-java-logging-sources.jar"><fileset dir="src/main"/></jar>
+
+        <jar jarfile="${dir.build}/dist/mongo-java-logging-javadoc.jar"><fileset dir="${dir.build}/javadocs"/></jar>
+
+        <copy file="${dir.build}/dist/mongo-java-logging.jar" tofile="${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
 
     </target>
 
@@ -131,6 +145,30 @@ limitations under the License.
                 </fileset>
             </batchtest>
         </junit>
+    </target>
+
+    <!-- ******************************************************************* -->
+    <!-- Generate the Javadocs.                                              -->
+    <!-- ******************************************************************* -->
+
+    <target name="javadocs" depends="compile" description="Generate Javadocs">
+        <delete dir="${dir.build}/javadocs/"/>
+
+        <javadoc
+            packagenames="com.deftlabs.logging.mongo"
+            sourcepath="src/main/"
+            defaultexcludes="yes"
+            destdir="${dir.build}/javadocs"
+            author="true"
+            version="true"
+            source="1.5"
+            use="true"
+            access="protected">
+
+            <link href="http://download.oracle.com/javase/1.5.0/docs/api/" />
+            <classpath refid="classpath.all"/>
+        </javadoc>
+
     </target>
 
     <!-- ******************************************************************* -->
