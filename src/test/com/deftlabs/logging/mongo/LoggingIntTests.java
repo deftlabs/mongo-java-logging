@@ -16,8 +16,16 @@
 
 package com.deftlabs.logging.mongo;
 
+// Mongo
+import com.mongodb.Mongo;
+import com.mongodb.MongoURI;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+
 // JUnit
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
 import org.junit.BeforeClass;
 import static org.junit.Assert.*;
 
@@ -31,17 +39,35 @@ import java.util.logging.LogManager;
  */
 public final class LoggingIntTests {
 
-    private static final Logger LOG = Logger.getLogger(LoggingIntTests.class.getName());
+    @Test
+    public void testSimpleWarning() throws Exception {
+        for (int idx=0; idx < 100; idx++) LOG.log(Level.WARNING, "this is a test");
+        Thread.sleep(1000);
+        assertEquals(100, getCollection().count());
+    }
 
     @BeforeClass
-    public static void setupTests() throws Exception {
+    public static void setupLogger() throws Exception {
         // In the current release of Java, the system does not look in the
-        // classpath for the logging.properties.
+        // classpath for the logging.properties
         LogManager.getLogManager().readConfiguration(LogConfigUtils.openClasspathResourceUrl("logging.properties"));
     }
 
-    @Test
-    public void testSimpleWarning() throws Exception
-    { for (int idx=0; idx < 100; idx++) LOG.log(Level.WARNING, "this is a test"); }
+    @Before
+    public void init() throws Exception {
+        // Cleanup the test database
+        _mongo = new Mongo(new MongoURI("mongodb://127.0.0.1:27017"));
+        getCollection().remove(new BasicDBObject());
+    }
+
+    @After
+    public void cleanup() { getCollection().remove(new BasicDBObject()); }
+
+    private DBCollection getCollection()
+    { return _mongo.getDB("mongo-java-logging").getCollection("log"); }
+
+    private Mongo _mongo;
+
+    private static final Logger LOG = Logger.getLogger(LoggingIntTests.class.getName());
 }
 
