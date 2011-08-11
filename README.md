@@ -11,7 +11,7 @@ Usage
 ------------
 
 * [Javadocs](http://api.deftlabs.com/mongo-java-logging)
-* [Getting Started](Getting Started)
+* [Getting Started](https://github.com/deftlabs/mongo-java-logging/wiki/Getting-Started)
 
 License
 ------------
