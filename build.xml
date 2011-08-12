@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<project name="mongo-java-logging" default="usage" basedir="./" xmlns:aspectj="antlib:org.aspectj">
+<project name="mongo-java-logging" default="usage" basedir="./" xmlns:aspectj="antlib:org.aspectj" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
     <!-- ******************************************************************* -->
     <!-- Set the base attributes.                                            -->
@@ -42,6 +42,18 @@ limitations under the License.
     </path>
 
     <path id="classpath.cp"><pathelement location="${dir.build.java}"/></path>
+
+    <!-- ******************************************************************* -->
+    <!-- Set the Maven attributes.                                           -->
+    <!-- ******************************************************************* -->
+
+    <property name="groupId" value="com.deftlabs"/>
+    <property name="artifactId" value="mongo-java-logging"/>
+
+    <property name="maven-snapshots-repository-id" value="sonatype-nexus-snapshots"/>
+    <property name="maven-snapshots-repository-url" value="https://oss.sonatype.org/content/repositories/snapshots"/>
+    <property name="maven-staging-repository-id" value="sonatype-nexus-staging"/>
+    <property name="maven-staging-repository-url" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/"/>
 
     <!-- ******************************************************************* -->
     <!-- Remove the build directory.                                         -->
@@ -88,9 +100,9 @@ limitations under the License.
 
     <target name="jar.all" depends="jar, javadocs">
 
-        <jar jarfile="${dir.build}/dist/mongo-java-logging-sources.jar"><fileset dir="src/main"/></jar>
+        <jar jarfile="${dir.build}/dist/mongo-java-logging-sources-${build.conf.lib.version}.jar"><fileset dir="src/main"/></jar>
 
-        <jar jarfile="${dir.build}/dist/mongo-java-logging-javadoc.jar"><fileset dir="${dir.build}/javadocs"/></jar>
+        <jar jarfile="${dir.build}/dist/mongo-java-logging-javadoc-${build.conf.lib.version}.jar"><fileset dir="${dir.build}/javadocs"/></jar>
 
         <copy file="${dir.build}/dist/mongo-java-logging.jar" tofile="${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
 
@@ -169,6 +181,60 @@ limitations under the License.
             <classpath refid="classpath.all"/>
         </javadoc>
 
+    </target>
+
+    <!-- ******************************************************************* -->
+    <!-- Deploy to Maven repository.                                         -->
+    <!-- ******************************************************************* -->
+
+    <target name="maven.deploy" depends="jar.all" description="Deploy a snapshot version to Maven snapshot repository">
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file"/>
+            <arg value="-Durl=${maven-snapshots-repository-url}"/>
+            <arg value="-DrepositoryId=${maven-snapshots-repository-id}"/>
+            <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
+            <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
+        </artifact:mvn>
+    </target>
+
+    <!-- ******************************************************************* -->
+    <!-- Stage in the Maven repository.                                      -->
+    <!-- ******************************************************************* -->
+
+    <target name="maven.stage" depends="jar.all" description="deploy release version to Maven staging repository">
+
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file"/>
+            <arg value="-Durl=${maven-staging-repository-url}"/>
+            <arg value="-DrepositoryId=${maven-staging-repository-id}"/>
+            <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
+            <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
+            <arg value="-Dkeyname=665C1184"/>
+
+            <arg value="-Pgpg" />
+        </artifact:mvn>
+
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file"/>
+            <arg value="-Durl=${maven-staging-repository-url}"/>
+            <arg value="-DrepositoryId=${maven-staging-repository-id}"/>
+            <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
+            <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-sources-${build.conf.lib.version}.jar"/>
+            <arg value="-Dclassifier=sources"/>
+            <arg value="-Dkeyname=665C1184"/>
+            <arg value="-Pgpg"/>
+        </artifact:mvn>
+
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file"/>
+            <arg value="-Durl=${maven-staging-repository-url}"/>
+            <arg value="-DrepositoryId=${maven-staging-repository-id}"/>
+            <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
+            <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-javadoc-${build.conf.lib.version}.jar"/>
+            <arg value="-Dclassifier=javadoc"/>
+            <arg value="-Dkeyname=665C1184"/>
+            <arg value="-Pgpg"/>
+        </artifact:mvn>
     </target>
 
     <!-- ******************************************************************* -->
