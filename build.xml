@@ -201,7 +201,7 @@ limitations under the License.
     <!-- Stage in the Maven repository.                                      -->
     <!-- ******************************************************************* -->
 
-    <target name="maven.stage" depends="jar.all" description="deploy release version to Maven staging repository">
+    <target name="maven.stage" depends="jar.all" description="Deploy release version to Maven staging repository">
 
         <artifact:mvn>
             <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file"/>
@@ -210,7 +210,6 @@ limitations under the License.
             <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
             <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
             <arg value="-Dkeyname=665C1184"/>
-
             <arg value="-Pgpg" />
         </artifact:mvn>
 
@@ -235,6 +234,7 @@ limitations under the License.
             <arg value="-Dkeyname=665C1184"/>
             <arg value="-Pgpg"/>
         </artifact:mvn>
+
     </target>
 
     <!-- ******************************************************************* -->
