@@ -28,4 +28,11 @@
         </dependency>
     </dependencies>
 
+    <developers>
+        <developer>
+            <name>Ryan Nitz</name>
+            <organization>Deft Labs</organization>
+        </developer>
+    </developers>
+
 </project>
