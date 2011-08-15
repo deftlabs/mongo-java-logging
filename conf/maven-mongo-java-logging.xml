@@ -5,7 +5,7 @@
     <artifactId>mongo-java-logging</artifactId>
     <packaging>jar</packaging>
     <name>Mongo Java Logging</name>
-    <version>0.5.1</version>
+    <version>@VERSION@</version>
     <description>A Java logging handler that writes to MongoDB</description>
     <url>https://deftlabs.com</url>
 
