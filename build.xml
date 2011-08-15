@@ -61,6 +61,7 @@ limitations under the License.
 
     <target name="clean">
         <delete dir="${dir.build}"/>
+        <delete file="conf/maven-mongo-java-logging.xml.asc"/>
     </target>
 
     <!-- ******************************************************************* -->
@@ -92,6 +93,11 @@ limitations under the License.
     <target name="jar" depends="clean, unit, compile">
         <mkdir dir="${dir.build}/dist"/>
         <jar destfile="${dir.build}/dist/mongo-java-logging.jar" basedir="${dir.build.java}" manifest="src/main/META-INF/MANIFEST.MF"></jar>
+
+       <copy file="conf/maven-mongo-java-logging.xml" tofile="${dir.build}/maven-mongo-java-logging.xml" filtering="true">
+            <filterset><filter token="VERSION" value="${build.conf.lib.version}"/></filterset>
+        </copy>
+
     </target>
 
     <!-- ******************************************************************* -->
@@ -187,12 +193,12 @@ limitations under the License.
     <!-- Deploy to Maven repository.                                         -->
     <!-- ******************************************************************* -->
 
-    <target name="maven.deploy" depends="jar.all" description="Deploy a snapshot version to Maven snapshot repository">
+    <target name="maven.snapshot" depends="jar.all" description="Deploy a snapshot version to Maven snapshot repository">
         <artifact:mvn>
             <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file"/>
             <arg value="-Durl=${maven-snapshots-repository-url}"/>
             <arg value="-DrepositoryId=${maven-snapshots-repository-id}"/>
-            <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
+            <arg value="-DpomFile=${dir.build}/maven-mongo-java-logging.xml"/>
             <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
         </artifact:mvn>
     </target>
@@ -207,7 +213,7 @@ limitations under the License.
             <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file"/>
             <arg value="-Durl=${maven-staging-repository-url}"/>
             <arg value="-DrepositoryId=${maven-staging-repository-id}"/>
-            <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
+            <arg value="-DpomFile=${dir.build}/maven-mongo-java-logging.xml"/>
             <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
             <arg value="-Dkeyname=665C1184"/>
             <arg value="-Pgpg" />
@@ -217,7 +223,7 @@ limitations under the License.
             <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file"/>
             <arg value="-Durl=${maven-staging-repository-url}"/>
             <arg value="-DrepositoryId=${maven-staging-repository-id}"/>
-            <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
+            <arg value="-DpomFile=${dir.build}/maven-mongo-java-logging.xml"/>
             <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-sources-${build.conf.lib.version}.jar"/>
             <arg value="-Dclassifier=sources"/>
             <arg value="-Dkeyname=665C1184"/>
@@ -228,7 +234,7 @@ limitations under the License.
             <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file"/>
             <arg value="-Durl=${maven-staging-repository-url}"/>
             <arg value="-DrepositoryId=${maven-staging-repository-id}"/>
-            <arg value="-DpomFile=conf/maven-mongo-java-logging.xml"/>
+            <arg value="-DpomFile=${dir.build}/maven-mongo-java-logging.xml"/>
             <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-javadoc-${build.conf.lib.version}.jar"/>
             <arg value="-Dclassifier=javadoc"/>
             <arg value="-Dkeyname=665C1184"/>
@@ -249,11 +255,15 @@ limitations under the License.
 
 - Create the jar file ............................ jar
 
+- Create ALL of the build jar files .............. jar.all
+
 - Clean the source tree .......................... clean
 
 - Run the unit tests ............................. unit
 
 - Run the integration tests ...................... test
+
+- Generate the Javadocs .......................... javadocs
 
 ----------------------------------------
 </echo>
