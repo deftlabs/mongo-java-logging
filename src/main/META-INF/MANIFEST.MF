@@ -2,6 +2,6 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: mongo-java-logging
 Bundle-SymbolicName: com.deftlabs.logging.mongo
-Bundle-Version: 0.5.1
+Bundle-Version: @VERSION@
 Import-Package: com.mongodb
 Export-Package: com.deftlabs.logging.mongo
