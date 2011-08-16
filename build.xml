@@ -92,7 +92,12 @@ limitations under the License.
 
     <target name="jar" depends="clean, unit, compile">
         <mkdir dir="${dir.build}/dist"/>
-        <jar destfile="${dir.build}/dist/mongo-java-logging.jar" basedir="${dir.build.java}" manifest="src/main/META-INF/MANIFEST.MF"></jar>
+
+        <copy file="src/main/META-INF/MANIFEST.MF" tofile="${dir.build}/MANIFEST.MF" filtering="true">
+            <filterset><filter token="VERSION" value="${build.conf.lib.version}"/></filterset>
+        </copy>
+
+        <jar destfile="${dir.build}/dist/mongo-java-logging.jar" basedir="${dir.build.java}" manifest="${dir.build}/MANIFEST.MF"></jar>
 
        <copy file="conf/maven-mongo-java-logging.xml" tofile="${dir.build}/maven-mongo-java-logging.xml" filtering="true">
             <filterset><filter token="VERSION" value="${build.conf.lib.version}"/></filterset>
