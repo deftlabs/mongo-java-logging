@@ -50,9 +50,9 @@ limitations under the License.
     <property name="groupId" value="com.deftlabs"/>
     <property name="artifactId" value="mongo-java-logging"/>
 
-    <property name="maven-snapshots-repository-id" value="sonatype-nexus-snapshots"/>
+    <property name="maven-snapshots-repository-id" value="sonatype-nexus-snapshots-mongo-java-logging"/>
     <property name="maven-snapshots-repository-url" value="https://oss.sonatype.org/content/repositories/snapshots"/>
-    <property name="maven-staging-repository-id" value="sonatype-nexus-staging"/>
+    <property name="maven-staging-repository-id" value="sonatype-nexus-staging-mongo-java-logging"/>
     <property name="maven-staging-repository-url" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/"/>
 
     <!-- ******************************************************************* -->
@@ -112,9 +112,7 @@ limitations under the License.
     <target name="jar.all" depends="jar, javadocs">
 
         <jar jarfile="${dir.build}/dist/mongo-java-logging-sources-${build.conf.lib.version}.jar"><fileset dir="src/main"/></jar>
-
         <jar jarfile="${dir.build}/dist/mongo-java-logging-javadoc-${build.conf.lib.version}.jar"><fileset dir="${dir.build}/javadocs"/></jar>
-
         <copy file="${dir.build}/dist/mongo-java-logging.jar" tofile="${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
 
     </target>
@@ -221,7 +219,7 @@ limitations under the License.
             <arg value="-DpomFile=${dir.build}/maven-mongo-java-logging.xml"/>
             <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-${build.conf.lib.version}.jar"/>
             <arg value="-Dkeyname=665C1184"/>
-            <arg value="-Pgpg" />
+            <arg value="-Pgpg-mongo-java-logging" />
         </artifact:mvn>
 
         <artifact:mvn>
@@ -232,7 +230,7 @@ limitations under the License.
             <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-sources-${build.conf.lib.version}.jar"/>
             <arg value="-Dclassifier=sources"/>
             <arg value="-Dkeyname=665C1184"/>
-            <arg value="-Pgpg"/>
+            <arg value="-Pgpg-mongo-java-logging"/>
         </artifact:mvn>
 
         <artifact:mvn>
@@ -243,7 +241,7 @@ limitations under the License.
             <arg value="-Dfile=${dir.build}/dist/mongo-java-logging-javadoc-${build.conf.lib.version}.jar"/>
             <arg value="-Dclassifier=javadoc"/>
             <arg value="-Dkeyname=665C1184"/>
-            <arg value="-Pgpg"/>
+            <arg value="-Pgpg-mongo-java-logging"/>
         </artifact:mvn>
 
     </target>
