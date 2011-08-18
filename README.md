@@ -1,11 +1,10 @@
-
 mongo-java-logging
 =============
 
 About
 ------------
 
-A Java logging handler that writes to MongoDB - [See the Wiki](https://github.com/deftlabs/mongo-java-logging/wiki) for more information.
+A [Java logging](http://en.wikipedia.org/wiki/Java_logging_framework) handler that writes to MongoDB - [See the Wiki](https://github.com/deftlabs/mongo-java-logging/wiki) for more information.
 
 Usage
 ------------
