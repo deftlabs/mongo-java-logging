@@ -24,7 +24,7 @@ limitations under the License.
 
     <property name="dir.build" value="build"/>
     <property name="dir.build.java" value="${dir.build}/java/classes"/>
-    <property name="dir.build.release" value="${dir.build}/monog-java-logging"/>
+    <property name="dir.build.release" value="${dir.build}/mongo-java-logging"/>
 
     <property name="dir.src" value="src"/>
     <property name="dir.src.java" value="src/main"/>
