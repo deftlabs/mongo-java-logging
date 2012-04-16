@@ -32,6 +32,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.LogManager;
 import java.util.logging.Handler;
 import java.util.logging.ErrorManager;
+import java.text.MessageFormat;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.lang.management.ManagementFactory;
@@ -83,7 +84,11 @@ public class MongoHandler extends Handler {
 
             final BasicDBObject msg = new BasicDBObject();
             msg.put(LogMsg.LEVEL.field, pRcd.getLevel().getName());
-            msg.put(LogMsg.MSG.field, pRcd.getMessage());
+
+            final Object [] params = pRcd.getParameters();
+            if (params == null) msg.put(LogMsg.MSG.field, pRcd.getMessage());
+            else msg.put(LogMsg.MSG.field, MessageFormat.format(pRcd.getMessage(), params));
+
             msg.put(LogMsg.LOGGER.field, pRcd.getLoggerName());
             msg.put(LogMsg.MSG_SEQ.field, pRcd.getSequenceNumber());
             msg.put(LogMsg.THREAD.field, pRcd.getThreadID());
