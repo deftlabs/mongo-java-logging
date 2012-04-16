@@ -39,29 +39,44 @@ import java.util.logging.LogManager;
  */
 public final class LoggingIntTests {
 
-    @Test
-    public void testSimpleWarning() throws Exception {
+    @Test public void testSimpleWarning() throws Exception {
         for (int idx=0; idx < 100; idx++) LOG.log(Level.WARNING, "this is a test");
         Thread.sleep(1000);
         assertEquals(100, getCollection().count());
     }
 
-    @BeforeClass
-    public static void setupLogger() throws Exception {
+    @Test public void testWithOneParam() throws Exception {
+        for (int idx=0; idx < 10; idx++) LOG.log(Level.INFO, "Hello {0}", "test");
+        Thread.sleep(1000);
+        assertEquals(10, getCollection().count());
+
+        final BasicDBObject doc = (BasicDBObject)getCollection().findOne();
+        assertEquals("Hello test", doc.getString("m"));
+    }
+
+    @Test public void testWithParams() throws Exception {
+        final String [] params = { "zero", "one", "two" };
+        for (int idx=0; idx < 10; idx++) LOG.log(Level.INFO, "Hello {0} {1} {2}", params);
+        Thread.sleep(1000);
+        assertEquals(10, getCollection().count());
+
+        final BasicDBObject doc = (BasicDBObject)getCollection().findOne();
+        assertEquals("Hello zero one two", doc.getString("m"));
+    }
+
+    @BeforeClass public static void setupLogger() throws Exception {
         // In the current release of Java, the system does not look in the
         // classpath for the logging.properties
         LogManager.getLogManager().readConfiguration(LogConfigUtils.openClasspathResourceUrl("logging.properties"));
     }
 
-    @Before
-    public void init() throws Exception {
+    @Before public void init() throws Exception {
         // Cleanup the test database
         _mongo = new Mongo(new MongoURI("mongodb://127.0.0.1:27017"));
         getCollection().remove(new BasicDBObject());
     }
 
-    @After
-    public void cleanup() { getCollection().remove(new BasicDBObject()); }
+    @After public void cleanup() { getCollection().remove(new BasicDBObject()); }
 
     private DBCollection getCollection()
     { return _mongo.getDB("mongo-java-logging").getCollection("log"); }
