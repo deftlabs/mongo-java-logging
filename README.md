@@ -12,6 +12,11 @@ Usage
 * [Javadocs](http://api.deftlabs.com/mongo-java-logging)
 * [Getting Started](https://github.com/deftlabs/mongo-java-logging/wiki/Getting-Started)
 
+Build
+------------
+
+[![Build Status](https://secure.travis-ci.org/deftlabs/mongo-java-logging.png)](http://travis-ci.org/deftlabs/mongo-java-logging)
+
 License
 ------------
 
